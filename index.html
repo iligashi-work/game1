@@ -103,39 +103,37 @@
   }
   .char-option:hover { transform: translateY(-6px); }
 
-  .char-circle {
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    position: relative;
-    transition: box-shadow 0.25s ease, transform 0.25s ease;
-    box-shadow: 0 0 0 3px transparent, 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-  .char-circle::after {
-    content: "★";
-    position: absolute;
-    inset: 0;
+  .char-avatar {
+    width: 100px;
+    height: 128px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2rem;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease;
   }
-  .char-option.selected .char-circle {
+  .char-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px var(--glow, var(--accent)));
+    transition: transform 0.25s ease, filter 0.25s ease;
+  }
+  .char-option.selected .char-avatar img {
     transform: scale(1.12);
-    box-shadow: 0 0 0 4px #fff, 0 0 28px var(--glow, var(--accent));
+    filter: drop-shadow(0 0 12px var(--glow, var(--accent))) drop-shadow(0 0 30px var(--glow, var(--accent)));
   }
+  .char-option.selected .char-name { color: var(--glow, var(--accent)); }
   .char-name {
     font-weight: 700;
     letter-spacing: 1px;
     font-size: 1.05rem;
+    transition: color 0.2s ease;
   }
 
-  /* Character color themes */
-  .char-explorer .char-circle { background: radial-gradient(circle at 35% 30%, #6ec6ff, #2b6be0); --glow: #6ec6ff; }
-  .char-scout    .char-circle { background: radial-gradient(circle at 35% 30%, #6ef0a8, #22a05a); --glow: #3ddc84; }
-  .char-pilot    .char-circle { background: radial-gradient(circle at 35% 30%, #ffc46b, #e0662b); --glow: #ffb454; }
+  /* Character color themes (accent glow per character) */
+  .char-explorer { --glow: #6ec6ff; }
+  .char-scout    { --glow: #3ddc84; }
+  .char-pilot    { --glow: #ffb454; }
 
   /* ---- Level select (planets) ---- */
   .planet-grid {
@@ -474,7 +472,7 @@
     function showCharacterSelect() {
       const options = Object.entries(CHARACTERS).map(([key, c]) => `
         <div class="char-option ${c.cls}" data-key="${key}" onclick="selectCharacter('${key}')">
-          <div class="char-circle"></div>
+          <div class="char-avatar"><img src="pic1-removebg-preview.png" alt="${c.name}" draggable="false"></div>
           <div class="char-name">${c.name}</div>
         </div>
       `).join('');

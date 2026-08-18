@@ -286,6 +286,23 @@
   }
   .btn-leave:hover { color: var(--text); border-color: var(--accent); }
 
+  .btn-next {
+    background: linear-gradient(90deg, var(--accent2), #2fbf7f);
+    color: #04120a;
+    box-shadow: 0 6px 24px rgba(61, 220, 132, 0.4);
+  }
+  .btn-next:hover { transform: translateY(-3px); }
+  .btn-next:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    padding: 10px 22px;
+    font-size: 0.85rem;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
   /* ---- Target stars ---- */
   .target {
     position: absolute;
@@ -343,13 +360,29 @@
     animation: pop 0.4s ease;
   }
   @keyframes pop { from { transform: scale(0.9); opacity: 0; } }
-  .end-card.win  { border-color: rgba(61, 220, 132, 0.5); background: rgba(10, 34, 26, 0.85); }
+  .end-card.win  { border-color: rgba(61, 220, 132, 0.5); background: rgba(10, 34, 26, 0.85); animation: pop 0.4s ease, win-glow 1.8s ease-in-out 0.4s infinite; }
   .end-card.lose { border-color: rgba(126, 200, 248, 0.5); background: rgba(12, 26, 48, 0.85); }
   .end-title { font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
   .end-card.win .end-title { color: var(--accent2); }
   .end-card.lose .end-title { color: var(--accent); }
   .end-score { color: var(--muted); font-size: 1.1rem; }
   .end-score b { color: var(--gold); font-size: 1.6rem; }
+  @keyframes win-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(61, 220, 132, 0); }
+    50%      { box-shadow: 0 0 46px rgba(61, 220, 132, 0.5); }
+  }
+  .win-star {
+    position: fixed;
+    z-index: 7;
+    font-size: 2rem;
+    pointer-events: none;
+    animation: win-star-pop 0.8s ease-out forwards;
+  }
+  @keyframes win-star-pop {
+    0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+    40%  { transform: scale(1.5) rotate(180deg); opacity: 1; }
+    100% { transform: scale(0.4) rotate(360deg); opacity: 0; }
+  }
 
   .confetti {
     position: fixed;
@@ -503,7 +536,7 @@
       showScreen(`
         <div class="game-hud">
           <div class="hud-chip">Level <span id="hudLevel">${selectedLevel}</span></div>
-          <div class="hud-chip">Score <span id="hudScore">0</span></div>
+          <div class="hud-chip">Score <span id="hudScore">0</span> / 100</div>
           <button class="btn btn-leave" onclick="showLevelSelect()">✕ Quit</button>
           <div class="hud-chip hud-timer" id="hudTimer">Time <span id="hudTime">30</span>s</div>
         </div>
@@ -515,7 +548,7 @@
           document.getElementById('hudTime').textContent = game.timeLeft;
           const t = document.getElementById('hudTimer');
           if (game.timeLeft <= 5) t.classList.add('warning');
-          if (game.timeLeft <= 0) endGame(false);
+          if (game.timeLeft <= 0) endGame(game.score >= 100);
         }, 1000);
         spawnTarget();
         game.spawnTimer = setInterval(spawnTarget, lv.spawnMs);
@@ -582,15 +615,22 @@
       overlay.className = 'end-overlay';
       const card = document.createElement('div');
       card.className = 'end-card ' + (won ? 'win' : 'lose');
-      card.innerHTML = `
-        <div class="end-title">${won ? 'Level Complete!' : 'Out of Time'}</div>
-        <div class="end-score">${CHARACTERS[selectedCharacter].name} scored <b>${game.score}</b> points on ${LEVELS[selectedLevel].name}</div>
+
+      const hasNext = won && !!LEVELS[selectedLevel + 1];
+      const buttons = `
         <button class="btn btn-primary" onclick="startGame()">Play Again</button>
-        <button class="btn btn-leave" onclick="showCharacterSelect()">Change Character</button>
+        ${hasNext ? `<button class="btn btn-next" onclick="selectLevel(${selectedLevel + 1})">Next Level →</button>` : ''}
+        <button class="btn btn-ghost" onclick="showLevelSelect()">← Level Select</button>
+      `;
+
+      card.innerHTML = `
+        <div class="end-title">${won ? 'Level Complete' : 'Out of Time, Try Again'}</div>
+        <div class="end-score">Final Score <b>${game.score}</b> / 100</div>
+        ${buttons}
       `;
       overlay.appendChild(card);
       document.body.appendChild(overlay);
-      if (won) confetti();
+      if (won) { confetti(); starBurst(); }
     }
 
     function confetti() {
@@ -604,6 +644,21 @@
         c.style.setProperty('--delay', (Math.random() * 1.2) + 's');
         document.body.appendChild(c);
         setTimeout(() => c.remove(), 5000);
+      }
+    }
+
+    function starBurst() {
+      const emojis = ['🌟', '⭐', '✨'];
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          const star = document.createElement('div');
+          star.className = 'win-star';
+          star.textContent = emojis[i % 3];
+          star.style.left = (15 + Math.random() * 70) + '%';
+          star.style.top = (15 + Math.random() * 70) + '%';
+          document.body.appendChild(star);
+          setTimeout(() => star.remove(), 800);
+        }, i * 110);
       }
     }
 

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Star Catcher</title>
+<style>
+  :root {
+    --bg: #070b1e;
+    --panel: rgba(16, 22, 48, 0.72);
+    --panel-border: rgba(120, 150, 255, 0.22);
+    --text: #eaf0ff;
+    --muted: #9aa7cc;
+    --accent: #7ec8f8;
+    --accent2: #3ddc84;
+    --accent3: #ffb454;
+    --gold: #ffd84d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ---- Starfield (persistent background) ---- */
+  #starfield {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--min, 0.15); }
+    50%      { opacity: var(--max, 0.9); }
+  }
+
+  /* ---- Screen container ---- */
+  .container {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px;
+  }
+
+  /* ---- Titles ---- */
+  .game-title {
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(126, 200, 248, 0.25);
+  }
+  .subtitle {
+    color: var(--muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+  }
+
+  .screen-title {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* ---- Character select ---- */
+  .char-grid {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .char-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.2s ease;
+  }
+  .char-option:hover { transform: translateY(-6px); }
+
+  .char-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    position: relative;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 0 0 3px transparent, 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+  .char-circle::after {
+    content: "★";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  .char-option.selected .char-circle {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 4px #fff, 0 0 28px var(--glow, var(--accent));
+  }
+  .char-name {
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 1.05rem;
+  }
+
+  /* Character color themes */
+  .char-explorer .char-circle { background: radial-gradient(circle at 35% 30%, #6ec6ff, #2b6be0); --glow: #6ec6ff; }
+  .char-scout    .char-circle { background: radial-gradient(circle at 35% 30%, #6ef0a8, #22a05a); --glow: #3ddc84; }
+  .char-pilot    .char-circle { background: radial-gradient(circle at 35% 30%, #ffc46b, #e0662b); --glow: #ffb454; }
+
+  /* ---- Level select (planets) ---- */
+  .planet-grid {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .planet-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.2s ease;
+  }
+  .planet-option:hover { transform: translateY(-6px); }
+  .planet-wrap {
+    position: relative;
+    width: 130px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .planet-wrap .ring {
+    position: absolute;
+    width: 130px;
+    height: 42px;
+    border-radius: 50%;
+    border: 4px solid var(--ring, rgba(255, 255, 255, 0.35));
+    transform: rotate(-18deg);
+  }
+  .planet-wrap .sphere {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: var(--grad);
+    box-shadow: inset -12px -12px 22px rgba(0, 0, 0, 0.5), 0 0 24px var(--glow, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  .planet-name {
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 1.05rem;
+  }
+
+  /* Planet color themes */
+  .planet-1 { --grad: radial-gradient(circle at 32% 30%, #6ea8ff, #1b3a8f); --glow: #4f7dff; --ring: rgba(126, 200, 248, 0.45); }
+  .planet-2 { --grad: radial-gradient(circle at 32% 30%, #6ef0a8, #0e5c3f); --glow: #35c98c; --ring: rgba(61, 220, 132, 0.45); }
+  .planet-3 { --grad: radial-gradient(circle at 32% 30%, #ff9a6b, #8f2b1b); --glow: #ff7a5c; --ring: rgba(255, 180, 84, 0.45); }
+
+  /* ---- Back button ---- */
+  .btn-back {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 10;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+  .btn-back:hover { border-color: var(--accent); color: var(--accent); transform: translateX(-3px); }
+
+  /* ---- Buttons ---- */
+  .btn {
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 14px 40px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+  }
+  .btn-primary {
+    background: linear-gradient(90deg, var(--accent), #5a8cff);
+    color: #06112e;
+    box-shadow: 0 6px 24px rgba(90, 140, 255, 0.4);
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-3px); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+    filter: grayscale(0.7);
+  }
+
+  /* ---- Gameplay HUD ---- */
+  .game-area {
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    background: rgba(9, 13, 32, 0.6);
+    cursor: crosshair;
+  }
+  .game-hud {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .hud-chip {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+  .hud-chip span { font-weight: 800; color: var(--accent); }
+  .hud-timer span { color: var(--accent2); }
+  .hud-timer.warning span { color: #ff5f6d; animation: pulse 0.6s ease infinite; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  .btn-leave {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  .btn-leave:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ---- Target stars ---- */
+  .target {
+    position: absolute;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.4rem;
+    background: radial-gradient(circle at 35% 30%, #ffffff, var(--glow, var(--gold)) 55%, rgba(0, 0, 0, 0.35) 100%);
+    box-shadow: 0 0 18px var(--glow, var(--gold)), 0 0 40px rgba(255, 255, 255, 0.15);
+    will-change: transform, opacity;
+    animation: pop-in 0.25s ease-out;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .target.fading { opacity: 0; transform: scale(0.4); }
+  @keyframes pop-in {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: burst 0.7s ease-out forwards;
+  }
+  @keyframes burst {
+    to { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+  }
+
+  /* ---- End screens ---- */
+  .end-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 8, 20, 0.8);
+    backdrop-filter: blur(4px);
+  }
+  .end-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 22px;
+    padding: 40px 52px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: pop 0.4s ease;
+  }
+  @keyframes pop { from { transform: scale(0.9); opacity: 0; } }
+  .end-card.win  { border-color: rgba(61, 220, 132, 0.5); background: rgba(10, 34, 26, 0.85); }
+  .end-card.lose { border-color: rgba(126, 200, 248, 0.5); background: rgba(12, 26, 48, 0.85); }
+  .end-title { font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
+  .end-card.win .end-title { color: var(--accent2); }
+  .end-card.lose .end-title { color: var(--accent); }
+  .end-score { color: var(--muted); font-size: 1.1rem; }
+  .end-score b { color: var(--gold); font-size: 1.6rem; }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    z-index: 6;
+    width: 10px;
+    height: 16px;
+    pointer-events: none;
+    animation: confetti-fall var(--dur, 3s) linear var(--delay, 0s) forwards;
+  }
+  @keyframes confetti-fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  .hint { color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+  <div id="starfield"></div>
+
+  <script>
+    /* ================= Persistent starfield ================= */
+    const starfield = document.getElementById('starfield');
+    function buildStarfield() {
+      starfield.innerHTML = '';
+      for (let i = 0; i < 110; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 2.2 + 0.6;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        s.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+        s.style.setProperty('--min', (0.05 + Math.random() * 0.2).toFixed(2));
+        s.style.setProperty('--max', (0.5 + Math.random() * 0.5).toFixed(2));
+        s.style.animationDelay = (Math.random() * 5) + 's';
+        starfield.appendChild(s);
+      }
+    }
+    buildStarfield();
+
+    /* ================= Game state ================= */
+    const CHARACTERS = {
+      explorer: { name: 'Explorer', cls: 'char-explorer', color: '#6ec6ff' },
+      scout:    { name: 'Scout',    cls: 'char-scout',    color: '#3ddc84' },
+      pilot:    { name: 'Pilot',    cls: 'char-pilot',    color: '#ffb454' },
+    };
+    let selectedCharacter = null;
+    let selectedLevel = 1;
+    const LEVELS = {
+      1: { name: 'Level 1', cls: 'planet-1', spawnMs: 1300, fallMin: 2.6, fallMax: 3.6 },
+      2: { name: 'Level 2', cls: 'planet-2', spawnMs: 1000, fallMin: 2.0, fallMax: 3.0 },
+      3: { name: 'Level 3', cls: 'planet-3', spawnMs: 750,  fallMin: 1.4, fallMax: 2.2 },
+    };
+    let game = { score: 0, timeLeft: 30, active: false, spawnTimer: null, countdown: null };
+
+    function stopGame() {
+      game.active = false;
+      clearInterval(game.countdown);
+      clearInterval(game.spawnTimer);
+      game.countdown = null;
+      game.spawnTimer = null;
+    }
+
+    /* ================= Screen navigation ================= */
+    function showScreen(html, afterBuild) {
+      stopGame();
+      const body = document.body;
+      body.innerHTML = '';
+      body.appendChild(starfield);
+
+      const el = document.createElement('div');
+      el.className = 'container';
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.94)';
+      el.innerHTML = html;
+      body.appendChild(el);
+
+      requestAnimationFrame(() => {
+        el.style.transition = 'opacity 0.55s ease, transform 0.55s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'scale(1)';
+      });
+      if (afterBuild) afterBuild(el);
+    }
+
+    /* ================= Character Select ================= */
+    function showCharacterSelect() {
+      const options = Object.entries(CHARACTERS).map(([key, c]) => `
+        <div class="char-option ${c.cls}" data-key="${key}" onclick="selectCharacter('${key}')">
+          <div class="char-circle"></div>
+          <div class="char-name">${c.name}</div>
+        </div>
+      `).join('');
+
+      showScreen(`
+        <div class="subtitle">Star Catcher</div>
+        <h1 class="game-title">Choose Your Character</h1>
+        <div class="char-grid">${options}</div>
+        <button class="btn btn-primary" id="startBtn" onclick="showLevelSelect()" disabled>Start Game</button>
+        <div class="hint">Select a character to begin your mission</div>
+      `);
+      selectedCharacter = null;
+    }
+
+    function selectCharacter(key) {
+      selectedCharacter = key;
+      document.querySelectorAll('.char-option').forEach(o =>
+        o.classList.toggle('selected', o.dataset.key === key)
+      );
+      const btn = document.getElementById('startBtn');
+      btn.disabled = false;
+      btn.textContent = `Start Game — ${CHARACTERS[key].name}`;
+    }
+
+    /* ================= Level Select ================= */
+    function showLevelSelect() {
+      if (!selectedCharacter) { showCharacterSelect(); return; }
+
+      const planets = Object.entries(LEVELS).map(([n, lv]) => `
+        <div class="planet-option" onclick="selectLevel(${n})">
+          <div class="planet-wrap ${lv.cls}">
+            <span class="ring"></span>
+            <span class="sphere">${n}</span>
+          </div>
+          <div class="planet-name">${lv.name}</div>
+        </div>
+      `).join('');
+
+      showScreen(`
+        <button class="btn-back" onclick="showCharacterSelect()">← Back</button>
+        <div class="subtitle">Star Catcher</div>
+        <h1 class="game-title">Select a Level to Begin</h1>
+        <div class="planet-grid">${planets}</div>
+        <div class="hint">Choose your destination, ${CHARACTERS[selectedCharacter].name}</div>
+      `);
+    }
+
+    function selectLevel(n) {
+      selectedLevel = n;
+      startGame();
+    }
+
+    /* ================= Gameplay ================= */
+    function startGame() {
+      if (!selectedCharacter) return;
+      const c = CHARACTERS[selectedCharacter];
+      const lv = LEVELS[selectedLevel] || LEVELS[1];
+
+      showScreen(`
+        <div class="game-hud">
+          <div class="hud-chip">Level <span id="hudLevel">${selectedLevel}</span></div>
+          <div class="hud-chip">Score <span id="hudScore">0</span></div>
+          <button class="btn btn-leave" onclick="showLevelSelect()">✕ Quit</button>
+          <div class="hud-chip hud-timer" id="hudTimer">Time <span id="hudTime">30</span>s</div>
+        </div>
+        <div class="game-area" id="gameArea"></div>
+      `, () => {
+        game = { score: 0, timeLeft: 30, active: true, spawnTimer: null, countdown: null, level: selectedLevel };
+        game.countdown = setInterval(() => {
+          game.timeLeft--;
+          document.getElementById('hudTime').textContent = game.timeLeft;
+          const t = document.getElementById('hudTimer');
+          if (game.timeLeft <= 5) t.classList.add('warning');
+          if (game.timeLeft <= 0) endGame(false);
+        }, 1000);
+        spawnTarget();
+        game.spawnTimer = setInterval(spawnTarget, lv.spawnMs);
+      });
+    }
+
+    function spawnTarget() {
+      if (!game.active) return;
+      const area = document.getElementById('gameArea');
+      if (!area) return;
+      const size = 40 + Math.random() * 22;
+      const x = Math.random() * (area.clientWidth - size);
+      const fallDist = area.clientHeight + size + 60;
+
+      const t = document.createElement('div');
+      t.className = 'target';
+      t.style.width = size + 'px';
+      t.style.height = size + 'px';
+      t.style.left = x + 'px';
+      t.style.top = '-50px';
+      t.style.setProperty('--fall-dist', fallDist + 'px');
+      t.style.setProperty('--glow', CHARACTERS[selectedCharacter].color);
+      const lv = LEVELS[game.level] || LEVELS[1];
+      t.style.animationDuration = (lv.fallMin + Math.random() * (lv.fallMax - lv.fallMin)).toFixed(2) + 's';
+      t.textContent = '★';
+      t.addEventListener('click', (e) => { e.stopPropagation(); hitTarget(t, e); });
+      t.addEventListener('animationend', () => t.remove());
+      area.appendChild(t);
+    }
+
+    function hitTarget(t, e) {
+      if (!game.active) return;
+      t.remove();
+      game.score++;
+      document.getElementById('hudScore').textContent = game.score;
+      burst(e.clientX, e.clientY);
+    }
+
+    function burst(x, y) {
+      const colors = ['#ffd84d', '#ffb454', '#7ec8f8', '#3ddc84', '#ffffff'];
+      for (let i = 0; i < 12; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const ang = (Math.PI * 2 * i) / 12;
+        const dist = 24 + Math.random() * 40;
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.background = colors[i % colors.length];
+        p.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+        p.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 700);
+      }
+    }
+
+    /* ================= End screen ================= */
+    function endGame(won) {
+      stopGame();
+      document.querySelectorAll('.target').forEach(t => t.remove());
+      localStorage.setItem('lastResult', won ? 'win' : 'lose');
+
+      const overlay = document.createElement('div');
+      overlay.className = 'end-overlay';
+      const card = document.createElement('div');
+      card.className = 'end-card ' + (won ? 'win' : 'lose');
+      card.innerHTML = `
+        <div class="end-title">${won ? 'Level Complete!' : 'Out of Time'}</div>
+        <div class="end-score">${CHARACTERS[selectedCharacter].name} caught <b>${game.score}</b> stars on ${LEVELS[selectedLevel].name}</div>
+        <button class="btn btn-primary" onclick="startGame()">Play Again</button>
+        <button class="btn btn-leave" onclick="showCharacterSelect()">Change Character</button>
+      `;
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      if (won) confetti();
+    }
+
+    function confetti() {
+      const colors = ['#3ddc84', '#7ec8f8', '#ffb454', '#ffd84d', '#ff5f6d'];
+      for (let i = 0; i < 60; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.background = colors[i % colors.length];
+        c.style.setProperty('--dur', (2 + Math.random() * 2.5) + 's');
+        c.style.setProperty('--delay', (Math.random() * 1.2) + 's');
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 5000);
+      }
+    }
+
+    /* ================= Init ================= */
+    showCharacterSelect();
+  </script>
+</body>
+</html>

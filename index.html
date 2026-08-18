@@ -401,9 +401,9 @@
     let selectedCharacter = null;
     let selectedLevel = 1;
     const LEVELS = {
-      1: { name: 'Level 1', cls: 'planet-1', spawnMs: 1300, fallMin: 2.6, fallMax: 3.6 },
-      2: { name: 'Level 2', cls: 'planet-2', spawnMs: 1000, fallMin: 2.0, fallMax: 3.0 },
-      3: { name: 'Level 3', cls: 'planet-3', spawnMs: 750,  fallMin: 1.4, fallMax: 2.2 },
+      1: { name: 'Level 1', cls: 'planet-1', spawnMs: 1400 },
+      2: { name: 'Level 2', cls: 'planet-2', spawnMs: 1000 },
+      3: { name: 'Level 3', cls: 'planet-3', spawnMs: 650 },
     };
     let game = { score: 0, timeLeft: 30, active: false, spawnTimer: null, countdown: null };
 
@@ -528,28 +528,29 @@
       if (!area) return;
       const size = 40 + Math.random() * 22;
       const x = Math.random() * (area.clientWidth - size);
-      const fallDist = area.clientHeight + size + 60;
+      const y = Math.random() * (area.clientHeight - size);
 
       const t = document.createElement('div');
       t.className = 'target';
       t.style.width = size + 'px';
       t.style.height = size + 'px';
       t.style.left = x + 'px';
-      t.style.top = '-50px';
-      t.style.setProperty('--fall-dist', fallDist + 'px');
+      t.style.top = y + 'px';
       t.style.setProperty('--glow', CHARACTERS[selectedCharacter].color);
-      const lv = LEVELS[game.level] || LEVELS[1];
-      t.style.animationDuration = (lv.fallMin + Math.random() * (lv.fallMax - lv.fallMin)).toFixed(2) + 's';
       t.textContent = '★';
       t.addEventListener('click', (e) => { e.stopPropagation(); hitTarget(t, e); });
-      t.addEventListener('animationend', () => t.remove());
+      t._removeTimer = setTimeout(() => {
+        t.classList.add('fading');
+        setTimeout(() => t.remove(), 250);
+      }, 2000);
       area.appendChild(t);
     }
 
     function hitTarget(t, e) {
       if (!game.active) return;
+      clearTimeout(t._removeTimer);
       t.remove();
-      game.score++;
+      game.score += 10;
       document.getElementById('hudScore').textContent = game.score;
       burst(e.clientX, e.clientY);
     }
@@ -583,7 +584,7 @@
       card.className = 'end-card ' + (won ? 'win' : 'lose');
       card.innerHTML = `
         <div class="end-title">${won ? 'Level Complete!' : 'Out of Time'}</div>
-        <div class="end-score">${CHARACTERS[selectedCharacter].name} caught <b>${game.score}</b> stars on ${LEVELS[selectedLevel].name}</div>
+        <div class="end-score">${CHARACTERS[selectedCharacter].name} scored <b>${game.score}</b> points on ${LEVELS[selectedLevel].name}</div>
         <button class="btn btn-primary" onclick="startGame()">Play Again</button>
         <button class="btn btn-leave" onclick="showCharacterSelect()">Change Character</button>
       `;

@@ -241,6 +241,32 @@
     filter: grayscale(0.7);
   }
 
+  /* ---- Image button (start) ---- */
+  .btn-img {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.25s ease, opacity 0.2s ease;
+    filter: drop-shadow(0 0 16px var(--accent));
+  }
+  .btn-img img {
+    display: block;
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+  }
+  .btn-img:hover:not(:disabled) { transform: scale(1.1); }
+  .btn-img:active:not(:disabled) { transform: scale(0.94); }
+  .btn-img:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(0.7);
+  }
+
   /* ---- Gameplay HUD ---- */
   .game-area {
     position: relative;
@@ -425,9 +451,9 @@
 
     /* ================= Game state ================= */
     const CHARACTERS = {
-      explorer: { name: 'Explorer', cls: 'char-explorer', color: '#6ec6ff' },
-      scout:    { name: 'Scout',    cls: 'char-scout',    color: '#3ddc84' },
-      pilot:    { name: 'Pilot',    cls: 'char-pilot',    color: '#ffb454' },
+      explorer: { name: 'Explorer', cls: 'char-explorer', color: '#6ec6ff', img: 'explorer.png' },
+      scout:    { name: 'Scout',    cls: 'char-scout',    color: '#3ddc84', img: 'scout.png' },
+      pilot:    { name: 'Pilot',    cls: 'char-pilot',    color: '#ffb454', img: 'pilot.png' },
     };
     let selectedCharacter = null;
     let selectedLevel = 1;
@@ -472,7 +498,7 @@
     function showCharacterSelect() {
       const options = Object.entries(CHARACTERS).map(([key, c]) => `
         <div class="char-option ${c.cls}" data-key="${key}" onclick="selectCharacter('${key}')">
-          <div class="char-avatar"><img src="pic1-removebg-preview.png" alt="${c.name}" draggable="false"></div>
+          <div class="char-avatar"><img src="${c.img}" alt="${c.name}" draggable="false"></div>
           <div class="char-name">${c.name}</div>
         </div>
       `).join('');
@@ -481,7 +507,9 @@
         <div class="subtitle">Star Catcher</div>
         <h1 class="game-title">Choose Your Character</h1>
         <div class="char-grid">${options}</div>
-        <button class="btn btn-primary" id="startBtn" onclick="showLevelSelect()" disabled>Start Game</button>
+        <button class="btn-img" id="startBtn" onclick="showLevelSelect()" disabled aria-label="Start Game">
+          <img src="start.png" alt="Start Game" draggable="false">
+        </button>
         <div class="hint">Select a character to begin your mission</div>
       `);
       selectedCharacter = null;
@@ -494,7 +522,6 @@
       );
       const btn = document.getElementById('startBtn');
       btn.disabled = false;
-      btn.textContent = `Start Game — ${CHARACTERS[key].name}`;
     }
 
     /* ================= Level Select ================= */

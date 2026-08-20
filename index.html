@@ -135,6 +135,63 @@
   .char-scout    { --glow: #3ddc84; }
   .char-pilot    { --glow: #ffb454; }
 
+  /* ---- NPC (Captain Vega) ---- */
+  .npc-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 2px 0 0;
+  }
+  .npc-avatar {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .npc-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 14px var(--accent3));
+  }
+  .npc-bubble {
+    position: relative;
+    max-width: 380px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 13px 18px;
+    text-align: left;
+  }
+  .npc-bubble::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 14px;
+    height: 14px;
+    background: var(--panel);
+    border-left: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .npc-name {
+    display: block;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: var(--accent3);
+    margin-bottom: 4px;
+  }
+  .npc-line {
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+
   /* ---- Level select (planets) ---- */
   .planet-grid {
     display: flex;
@@ -495,7 +552,16 @@
     }
 
     /* ================= Character Select ================= */
+    function getCaptainVegaDialogue() {
+      let last = null;
+      try { last = localStorage.getItem('lastResult'); } catch (e) { last = null; }
+      if (last === 'win')  return "Back again, champion? Let's see if you can beat your own score.";
+      if (last === 'lose') return 'Do not worry about last time. Everyone has a rough round. Try again';
+      return 'New around here? Click fast and you will do fine.';
+    }
+
     function showCharacterSelect() {
+      const dialogue = getCaptainVegaDialogue();
       const options = Object.entries(CHARACTERS).map(([key, c]) => `
         <div class="char-option ${c.cls}" data-key="${key}" onclick="selectCharacter('${key}')">
           <div class="char-avatar"><img src="${c.img}" alt="${c.name}" draggable="false"></div>
@@ -506,6 +572,13 @@
       showScreen(`
         <div class="subtitle">Star Catcher</div>
         <h1 class="game-title">Choose Your Character</h1>
+        <div class="npc-row">
+          <div class="npc-avatar"><img src="npc.png" alt="Captain Vega" draggable="false"></div>
+          <div class="npc-bubble">
+            <span class="npc-name">Captain Vega</span>
+            <span class="npc-line">${dialogue}</span>
+          </div>
+        </div>
         <div class="char-grid">${options}</div>
         <button class="btn-img" id="startBtn" onclick="showLevelSelect()" disabled aria-label="Start Game">
           <img src="start.png" alt="Start Game" draggable="false">

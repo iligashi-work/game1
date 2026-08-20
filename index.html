@@ -135,81 +135,6 @@
   .char-scout    { --glow: #3ddc84; }
   .char-pilot    { --glow: #ffb454; }
 
-  /* ---- NPC (Captain Vega) ---- */
-  .npc-wrap {
-    position: fixed;
-    right: 26px;
-    bottom: 0;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;
-    max-width: 270px;
-  }
-  .speech-bubble {
-    position: relative;
-    background: #121a38;
-    border: 1px solid var(--accent);
-    border-radius: 16px;
-    padding: 13px 18px;
-    color: var(--text);
-    font-size: 0.95rem;
-    line-height: 1.5;
-    text-align: center;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 24px rgba(126, 200, 248, 0.12);
-    margin-bottom: 6px;
-    animation: bubble-in 0.5s ease;
-  }
-  .speech-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 10px solid transparent;
-    border-top-color: #121a38;
-    border-bottom: none;
-  }
-  @keyframes bubble-in {
-    from { opacity: 0; transform: translateY(12px) scale(0.9); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .npc-figure {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .npc-img {
-    width: 180px;
-    height: 180px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 18px rgba(255, 216, 77, 0.55));
-    animation: npc-float 4s ease-in-out infinite;
-  }
-  @keyframes npc-float {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-8px); }
-  }
-  .npc-name {
-    font-weight: 800;
-    letter-spacing: 1px;
-    font-size: 1.05rem;
-    color: var(--gold);
-    text-shadow: 0 0 14px rgba(255, 216, 77, 0.5);
-  }
-  .npc-title {
-    color: var(--muted);
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  @media (max-width: 720px) {
-    .npc-wrap { right: 8px; max-width: 190px; }
-    .npc-img { width: 120px; height: 120px; }
-    .speech-bubble { font-size: 0.82rem; padding: 10px 14px; }
-  }
-
   /* ---- Level select (planets) ---- */
   .planet-grid {
     display: flex;
@@ -569,27 +494,6 @@
       if (afterBuild) afterBuild(el);
     }
 
-    /* ================= NPC (Captain Vega) ================= */
-    function getVegaLine() {
-      const result = localStorage.getItem('lastResult');
-      if (result === 'win')  return "Back again, champion? Let's see if you can beat your own score.";
-      if (result === 'lose') return "Do not worry about last time. Everyone has a rough round. Try again.";
-      return "New around here? Click fast and you will do fine.";
-    }
-
-    function vegaHTML() {
-      return `
-        <div class="npc-wrap" role="complementary" aria-label="Captain Vega">
-          <div class="speech-bubble">${getVegaLine()}</div>
-          <div class="npc-figure">
-            <img class="npc-img" src="NPC.png" alt="Captain Vega, veteran pilot" draggable="false">
-            <div class="npc-name">Captain Vega</div>
-            <div class="npc-title">Veteran Pilot</div>
-          </div>
-        </div>
-      `;
-    }
-
     /* ================= Character Select ================= */
     function showCharacterSelect() {
       const options = Object.entries(CHARACTERS).map(([key, c]) => `
@@ -607,7 +511,6 @@
           <img src="start.png" alt="Start Game" draggable="false">
         </button>
         <div class="hint">Select a character to begin your mission</div>
-        ${vegaHTML()}
       `);
       selectedCharacter = null;
     }
